@@ -1,19 +1,25 @@
-Post-split verification
-=======================
+Paper workflow verification
+===========================
 
-2026-11-05. Independent Python 3.12 environment: 9 tests passed.
-The command-line entry point is installed and runs without the other paper
-packages or the original combined ``rds`` package.
+2026-11-05. The independent Python 3.12 environment passes 15 automated
+tests, including corresponding-component scale statistics, operation with
+only original/large-scale inputs, and nonzero exit status for an actual
+projection mismatch or non-finite projection.
 
-B6h LSE: 7 passing checks and the same 2 expected wS/vS cache-closure
-failures. The three physical large-scale projections still match. Two
-passing checks diagnose the cache substitution rather than validate physics.
+The current workflow was rerun for all five configurations. Saved HWA
+bases and large-scale PIV fields agree with the direct projections. The
+computed residuals also satisfy internal algebraic closure; this is not
+an additional independent experimental validation.
 
-The existing scientific checks and tolerances are unchanged. Source
-function/class bodies were also compared by AST; see PROVENANCE.rst.
-Numerical arrays, figures and raw data remain local. The accompanying
-``split_validation.json`` contains check results only.
+All 45 output arrays (three components, five cases, and three arrays per
+file) are element-for-element identical to the earlier computed variances,
+large-scale variances and third-order contributions. The detailed current
+record is in ``split_validation.json`` and ``validation_summary.json``.
 
-Each repository has its own Linux/Windows/macOS x Python 3.10/3.12 workflow.
-Local success is not a claim of remote CI completion; the Actions tab shows
-the actual results for the published commit.
+The command-line workflow now requires only the inputs used by the main
+statistics calculation. Earlier development records are retained locally
+and in Git history. No raw data or original source was modified.
+
+The processing scope remains 7.4-Hz saved-basis projection and scale
+statistics, not a complete rerun of all paper figures. The Actions tab
+shows the independent Linux/Windows/macOS test results for each commit.

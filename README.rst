@@ -1,60 +1,94 @@
-RdS 2024: POD–LSE scale interaction
-==================================
+Effect of Urban Morphology and an Upstream Tall Building on the Scale Interaction Between the Overlying Boundary Layer and a Street Canyon
+==========================================================================================================================================
 
-Independent Python tools for Du, Perret & Savory (2024), Boundary-Layer
-Meteorology, https://doi.org/10.1007/s10546-023-00844-8.
-No MATLAB runtime or installation of another RdS repository is required.
+Authors: Haoran Du, Laurent Perret, and Eric Savory
 
-Install and run
+Affiliations:
+
+* Haoran Du and Eric Savory: Department of Mechanical and Materials Engineering,
+  University of Western Ontario, London, Ontario, Canada.
+* Laurent Perret: Nantes Universite, Ecole Centrale de Nantes, CNRS, LHEEA,
+  UMR 6598, Nantes, France.
+
+Corresponding author: Haoran Du, hdu59@uwo.ca
+
+Published in Boundary-Layer Meteorology (2024).
+Article: https://doi.org/10.1007/s10546-023-00844-8
+
+Code Repository
 ---------------
 
-From this repository directory, with Python 3.10 or newer::
+This repository contains Python routines for the POD–LSE analysis of the
+Rue des Suisses (RdS) street canyon. The workflow uses the saved hot-wire
+temporal basis to recover large-scale PIV velocity fluctuations and compute
+scale-separated variances and third-order moments.
+
+This is a code-only release. Experimental data, processed arrays and
+generated figures are supplied or produced separately.
+
+Repository layout
+-----------------
+
+* ``src/rds2024/analysis.py``: large-scale reconstruction and scale-separated statistics.
+* ``src/rds2024/decomposition.py``: POD, linear stochastic estimation and third-order moments.
+* ``src/rds2024/io.py``: measurement-file readers and array conventions.
+* ``data/README.rst``: expected inputs and directory layout.
+* ``tests/``: automated tests for the Python routines.
+* ``docs/``: implementation and processing notes.
+
+Setup
+-----
+
+Use Python 3.10 or later. From the repository directory::
 
     python -m venv .venv
-    # Linux/macOS: source .venv/bin/activate
-    # Windows PowerShell: .venv\Scripts\Activate.ps1
-    python -m pip install -e ".[test]"
-    python -m pytest -q
-    rds2024 validate --data-root "/path/to/DATA" --output outputs/lse
 
-For one case, add ``--cases 6b``. ``python -m rds2024.cli`` is an equivalent
-entry point. Inputs remain external and read-only, in their original DATA
-directory layout.
+Activate the environment on Linux/macOS::
 
-Scope and limitations
----------------------
+    source .venv/bin/activate
 
-This is a partial, explicitly audited reproduction, not a claim that all
-2024 figures have been independently rebuilt.
+Or in Windows PowerShell::
 
-* Reprojects all three 7.4-Hz PIV components in five cases using the saved
-  HWA temporal basis. The projection is algebraically equivalent to the
-  full-rank PIV POD–LSE expression without another giant PIV SVD.
-* Computes scale variances and third-order terms using corresponding-
-  component residuals, as the main MATLAB statistics script already does.
-* Retains checks on old wS/vS caches. Those caches do not contain the named
-  component residuals, but the main statistics script does not use them.
-  This is not evidence that the paper's actual statistics are wrong.
-* Supplies independent POD, centered least-squares and third-moment kernels.
+    .\.venv\Scripts\Activate.ps1
 
-The retained baseline has 35 passing checks and 10 failed legacy-cache
-closures. Ten of the passes diagnose the cache substitution; they are not
-ten additional scientific validations. The validation command therefore
-returns status 1 even when the independently reprojected large scales match.
-See ``docs/AUDIT_FINDINGS.rst`` and ``docs/validation_summary.json``.
+Then install the package::
 
-Raw HWA filtering, delay embedding, 177.6-Hz reconstruction and all final
-figure paths are not yet independently reproduced. The diagnostic figure
-is not an exact recreation of a publication figure.
+    python -m pip install -e .
 
-Contents and provenance
------------------------
+Run order
+---------
 
-``src/rds2024`` contains only the POD–LSE workflow and its local helpers.
-It does not import the 2023 plotting package or the 2025 SPOD package.
-``tests`` is data-independent; ``docs/SPLIT_VERIFICATION.rst`` distinguishes
-new extraction tests from inherited experimental-data validation.
+1. Obtain the external velocity fields and hot-wire temporal bases listed in
+   ``data/README.rst``. Keep their original directory layout.
+2. Compute the scale-separated statistics for all five configurations::
 
-MATLAB originals are retained unchanged in the local ``archive/matlab``;
-the public hash index is in ``docs``. Neither original arrays nor MATLAB
-source is uploaded. See ``THIRD_PARTY.rst`` and ``CITATION.cff``.
+       rds2024 reproduce --data-root "/path/to/DATA" --output outputs/lse
+
+3. To process B6h only::
+
+       rds2024 reproduce --data-root "/path/to/DATA" --output outputs/lse_6b --cases 6b
+
+The earlier command name ``rds2024 validate`` remains supported.
+
+All generated files are written to the selected output directory. ``outputs/``
+is ignored by Git. ``python -m rds2024.cli`` is an alternative to ``rds2024``.
+
+Processing scope
+----------------
+
+The workflow uses the 7.4-Hz PIV fields and the saved orthonormal hot-wire
+temporal basis. Small-scale fluctuations are calculated as the original
+fluctuation minus its corresponding large-scale component, following the
+paper's main statistics script.
+
+Outputs include scale variances, the four third-order contributions and a
+centreline comparison plot. Raw hot-wire filtering, delay embedding, the
+177.6-Hz reconstruction and the complete set of paper figures are not yet
+included in this Python workflow.
+
+Data and citation
+-----------------
+
+Input files are external to this repository; their expected layout is given
+in ``data/README.rst``. Please cite the article linked above when using this
+code. Citation metadata are also provided in ``CITATION.cff``.

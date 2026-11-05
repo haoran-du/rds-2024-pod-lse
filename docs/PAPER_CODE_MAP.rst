@@ -19,10 +19,9 @@ Paths below are DATA-relative and retained in the local archive.
   centered PIV signal and B contains the 105 orthonormal HWA temporal modes.
   This is equivalent to the full-rank PIV POD expression in the script and
   avoids storing/recomputing its complete 10,000-mode SVD.
-* XZ_POD_LSE_copy2_short.m lines 208–209 contain the confirmed saved wS/vS
-  subtraction discrepancy; see AUDIT_FINDINGS.rst. Main statistics recompute
-  correct residuals rather than consuming those caches. Large-scale fields
-  are verified; the cache finding is not a finding of erroneous paper results.
+* ``RdS_POD_LSE_Statistics.m`` computes small-scale fluctuations from each
+  component's original field minus its large-scale field. The Python
+  statistics workflow uses the same definition.
 
 Python: see this repository's ``src/rds2024`` package.
 

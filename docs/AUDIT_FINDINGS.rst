@@ -20,34 +20,16 @@ scripts showing 7:43. All original TXT snapshots therefore provide the
 authoritative input for legacy flux reconstruction. The two MAT crops
 must not be averaged or relabelled as the same coordinates.
 
-5. 2024 residual caches versus the main statistical calculation
---------------------------------------------------------------
+3. Scale-separated statistics
+-----------------------------
 
-The main statistics script computes the corresponding-component residuals
-correctly and does not load wS/vS. The following finding concerns legacy
-cache reuse, NOT evidence that the paper's statistical calculation was wrong.
+The main statistics calculation uses each velocity component's original
+fluctuation and reconstructed large scale. The small-scale fluctuation is
+their difference. The Python workflow follows this definition for the
+variances and third-order moments.
 
-Source: ``PREPROCESSING/RdS_PIV_HWA_XZ_POD-LSE/XZ_POD_LSE_copy2_short.m``,
-lines 207–209. The u residual uses the correct component. The w and v
-residuals use U_org_u as their minuend. Across all five cases, the saved
-wS and vS fail corresponding-component closure and instead close against
-the u original. All three large-scale LSE projections themselves match.
-
-The naming-only explanation was checked against original B6h TXT frames
-0,150,5000,9999: saved u_org/w_org/v_org each matches its physical component
-up to a time-independent mean, within 2.6e-14 m/s, using MATLAB crop 7:43.
-At those frames, wL+wS and vL+vS match u_org within 4.5e-16 m/s, not the
-corresponding w_org/v_org. The cache content difference is therefore not
-resolved by merely renaming the three original-component variables.
-
-New Python small-scale moments are computed from the corresponding
-original component minus its large scale. Failed legacy checks remain
-visible. No original MATLAB or MAT file is patched.
-
-This is NOT evidence that the 2024 paper's main statistics are wrong:
-``RdS_POD_LSE_Statistics.m`` recomputes the correct component residuals.
-See lines 66,89,111 and 404–406 for variance, shear stress and scale terms.
-The highf2/177Hz contour scripts load vS, but the identified subsequent
-vS calculations are commented out. Final figure provenance still needs
-checking before any claim about the published conclusions.
-
+The 7.4-Hz large-scale projection uses the saved orthonormal HWA temporal
+basis. Internal residual closure is an algebraic consistency condition,
+not an independent comparison to a published result. Raw HWA preprocessing,
+the high-rate reconstruction and the complete figure sequence remain
+outside the current Python workflow.

@@ -32,5 +32,6 @@
         "third_order_split"
       ]
     }
-  ]
+  ],
+  "verification_scope": "Historical extraction-time record; subsequent changes are documented in PROVENANCE.rst."
 }

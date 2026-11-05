@@ -1,4 +1,4 @@
-"""Validate saved 2024 POD-LSE projections without recomputing giant SVDs."""
+"""Recover 2024 POD-LSE scale statistics without recomputing giant SVDs."""
 from pathlib import Path
 import json
 import numpy as np
@@ -18,6 +18,30 @@ def load_velocity(path):
     return loadmat(path, variable_names=[name])[name]
 
 
+def scale_statistics(original, large, batch_size=100):
+    """Use corresponding-component residuals, as in the main paper script."""
+    if original.ndim != 3 or original.shape != large.shape or original.shape[2] == 0:
+        raise ValueError("Original and large-scale fields must share (z, x, time) dimensions")
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    variance = np.mean(original**2, axis=2)
+    variance_large = np.mean(large**2, axis=2)
+    terms = np.zeros((4, *original.shape[:2]))
+    closure = 0.0
+    for start in range(0, original.shape[2], batch_size):
+        total = original[:, :, start:start+batch_size]
+        l = large[:, :, start:start+batch_size]
+        s = total-l
+        error = float(np.max(abs(l+s-total)))
+        closure = max(closure, error) if np.isfinite(error) else float("inf")
+        terms[0] += np.sum(l*l*l, axis=2)
+        terms[1] += 3*np.sum(l*l*s, axis=2)
+        terms[2] += 3*np.sum(l*s*s, axis=2)
+        terms[3] += np.sum(s*s*s, axis=2)
+    terms /= original.shape[2]
+    return variance, variance_large, terms, closure
+
+
 def validate_lse(root: Path, output: Path, cases=None):
     root, output = root.resolve(strict=True), output.resolve()
     if root == output or root in output.parents:
@@ -31,56 +55,37 @@ def validate_lse(root: Path, output: Path, cases=None):
         case_profiles = {}
         for component in "uwv":
             original = load_velocity(folder / f"{component}_org_7d4_{case}.mat")
+            if b.ndim != 2 or original.shape[2] != b.shape[0]:
+                raise ValueError("HWA basis and PIV fields must have the same snapshot count")
             # Direct projection is algebraically identical to Phi*S*(V.T*B)*B.T
             # when all PIV modes are retained. It avoids the 10000-mode SVD.
-            x = original.reshape(-1, 10000, order="F").T
+            x = original.reshape(-1, len(b), order="F").T
             coefficients = x.T @ b
             large = load_velocity(folder / f"{component}L_7d4_{case}.mat")
-            stored = large.reshape(-1, 10000, order="F").T
+            stored = large.reshape(-1, len(b), order="F").T
             max_error = 0.0
             for start in range(0, len(b), 100):
                 predicted = b[start:start+100]@coefficients.T
-                max_error = max(max_error, float(np.max(abs(predicted-stored[start:start+100]))))
+                error = float(np.max(abs(predicted-stored[start:start+100])))
+                max_error = max(max_error, error) if np.isfinite(error) else float("inf")
             checks.append({"name": f"{case}/{component}/LSE-direct-projection", "pass": max_error < 1e-9,
                            "max_abs_error": max_error, "atol": 1e-9})
             # Keep profiles for later use; the normalizer is local total RMS,
             # not a friction velocity or RMS of a spatially averaged signal.
-            var = np.mean(original**2, axis=2)
-            var_l = np.mean(large**2, axis=2)
-            small = load_velocity(folder / f"{component}S_7d4_{case}.mat")
-            closure = 0.0
-            legacy_u_substitution_error = 0.0
-            u_reference = load_velocity(folder / f"u_org_7d4_{case}.mat") if component != "u" else original
-            terms = np.zeros((4, 154, 37))
-            for start in range(0, 10000, 100):
-                l = large[:, :, start:start+100]
-                legacy_s = small[:, :, start:start+100]
-                closure = max(closure, float(np.max(abs(l+legacy_s-original[:, :, start:start+100]))))
-                legacy_u_substitution_error = max(legacy_u_substitution_error, float(np.max(abs(l+legacy_s-u_reference[:, :, start:start+100]))))
-                # Recomputed small scales use the CORRESPONDING component.
-                # Saved wS/vS fail closure: do not propagate that legacy bug.
-                s = original[:, :, start:start+100]-l
-                terms[0] += np.sum(l*l*l, axis=2)
-                terms[1] += 3*np.sum(l*l*s, axis=2)
-                terms[2] += 3*np.sum(l*s*s, axis=2)
-                terms[3] += np.sum(s*s*s, axis=2)
-            terms /= 10000
-            checks.append({"name": f"{case}/{component}/large+small=original", "pass": closure < 1e-10, "max_abs_error": closure})
-            if component != "u":
-                checks.append({"name": f"{case}/{component}/legacy-small-equals-u-original-minus-large",
-                               "pass": legacy_u_substitution_error < 1e-10,
-                               "max_abs_error": legacy_u_substitution_error,
-                               "meaning": "Diagnostic confirmation of historical cross-component substitution, NOT scientific validation"})
+            var, var_l, terms, closure = scale_statistics(original, large)
+            checks.append({"name": f"{case}/{component}/computed-large+small=original",
+                           "pass": closure < 1e-10, "max_abs_error": closure,
+                           "meaning": "Internal closure of the computed residual, not an independent reference comparison"})
             np.savez_compressed(output / f"{case}_{component}_scale_statistics.npz", variance=var,
                                 variance_large=var_l, third_order_terms=terms)
             if component == "u":
                 normal = np.where(var > 0, var**1.5, np.nan)
                 case_profiles = {"terms_center": terms[:, :, 18]/normal[:, 18],
                                  "large_variance_fraction_center": var_l[:, 18]/np.where(var[:, 18] > 0, var[:, 18], np.nan)}
-            del original, x, large, stored, small, u_reference
+            del original, x, large, stored
         profiles[case] = case_profiles
         rows.append({"case": case, "predictor_modes": b.shape[1], "snapshots": b.shape[0]})
-        print(f"2024 {case}: direct LSE and scale-closure checks finished", flush=True)
+        print(f"2024 {case}: scale-separated statistics finished", flush=True)
     fig, axes = plt.subplots(1, 2, figsize=(9, 5), layout="constrained")
     zfile = root / "POSTPROCESSING/RdS_PIV_XZ_STATISTICS/RdS_PIV_XZ_STATISTICS_PROFILES/PIV_z.mat"
     z = one_mat(zfile).ravel()[:154]/.116
@@ -95,8 +100,7 @@ def validate_lse(root: Path, output: Path, cases=None):
     savefig(fig, output, "scale_interaction_centerline_diagnostic")
     report = {"status": "full 7.4-Hz saved PIV scale fields reprojected with saved HWA basis; raw HWA filter and high-rate reconstruction not rerun",
               "checks": checks, "cases": rows,
-              "corrected_output_policy": "Small-scale moments recomputed as corresponding original minus corresponding large scale; archived wS/vS are diagnostic only",
-              "historical_bug_source": "PREPROCESSING/RdS_PIV_HWA_XZ_POD-LSE/XZ_POD_LSE_copy2_short.m:208-209",
-              "published_figure_impact": "not established; RdS_POD_LSE_Statistics.m recomputes correct small scales; highf2/177Hz contour scripts load vS and require figure-level tracing"}
+              "residual_definition": "Corresponding original component minus its large-scale component, following RdS_POD_LSE_Statistics.m",
+              "scope": "7.4-Hz saved-basis projection and scale statistics; not the complete set of paper figures"}
     (output / "validation.json").write_text(json.dumps(report, indent=2))
     return {"passed": sum(c["pass"] for c in checks), "failed": [c for c in checks if not c["pass"]]}

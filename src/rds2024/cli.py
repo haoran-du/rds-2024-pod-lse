@@ -7,7 +7,7 @@ from pathlib import Path
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Paper-specific RdS reproduction; source data are read-only")
     sub = parser.add_subparsers(dest="command", required=True)
-    validate = sub.add_parser("validate", help="Verify saved-basis LSE projections and residual caches")
+    validate = sub.add_parser("reproduce", aliases=["validate"], help="Compute saved-basis LSE projections and scale statistics")
     validate.add_argument("--cases", nargs="+", choices=["1b", "2b", "3b", "6b", "ca"])
     commands = (validate,)
     for command in commands:

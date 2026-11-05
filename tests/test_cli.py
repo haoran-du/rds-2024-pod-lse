@@ -4,13 +4,14 @@ import pytest
 from rds2024.cli import main
 
 
-@pytest.mark.parametrize("failed", [[], [{"name": "known legacy mismatch", "pass": False}]])
-def test_validation_exit_status(tmp_path, monkeypatch, failed):
+@pytest.mark.parametrize("command", ["reproduce", "validate"])
+@pytest.mark.parametrize("failed", [[], [{"name": "projection mismatch", "pass": False}]])
+def test_validation_exit_status(tmp_path, monkeypatch, failed, command):
     source = tmp_path/"DATA"
     source.mkdir()
     module = importlib.import_module("rds2024.analysis")
     monkeypatch.setattr(module, "validate_lse", lambda *a, **k: {"passed": 2, "failed": failed})
-    args = ["validate", "--data-root", str(source), "--output", str(tmp_path/"out")]
+    args = [command, "--data-root", str(source), "--output", str(tmp_path/"out")]
     if failed:
         with pytest.raises(SystemExit) as exc:
             main(args)
