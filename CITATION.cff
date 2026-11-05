@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "Please cite the 2024 paper associated with this repository."
+title: "RdS 2024: POD-LSE scale interaction"
+type: software
+version: 0.1.0
+repository-code: "https://github.com/haoran-du/rds-2024-pod-lse"
+authors:
+  - family-names: Du
+    given-names: Haoran
+references:
+  - type: article
+    title: "Effect of Urban Morphology and an Upstream Tall Building on the Scale Interaction Between the Overlying Boundary Layer and a Street Canyon"
+    authors:
+      - family-names: Du
+        given-names: Haoran
+      - family-names: Perret
+        given-names: Laurent
+      - family-names: Savory
+        given-names: Eric
+    year: 2024
+    doi: 10.1007/s10546-023-00844-8

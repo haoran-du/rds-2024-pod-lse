@@ -1,0 +1,75 @@
+{
+  "date": "2026-11-05",
+  "local_tests_passed": 9,
+  "runs": {
+    "split_lse_6b": {
+      "passed": 7,
+      "failed": [
+        {
+          "name": "6b/w/large+small=original",
+          "pass": false,
+          "max_abs_error": 7.340391227399127
+        },
+        {
+          "name": "6b/v/large+small=original",
+          "pass": false,
+          "max_abs_error": 6.579969396580956
+        }
+      ],
+      "checks": [
+        {
+          "name": "6b/HWA-temporal-basis-orthonormal",
+          "pass": true,
+          "max_abs_error": 2.1094237467877974e-15,
+          "atol": 1e-10,
+          "rtol": 1e-10
+        },
+        {
+          "name": "6b/u/LSE-direct-projection",
+          "pass": true,
+          "max_abs_error": 1.021405182655144e-14,
+          "atol": 1e-09
+        },
+        {
+          "name": "6b/u/large+small=original",
+          "pass": true,
+          "max_abs_error": 4.440892098500626e-16
+        },
+        {
+          "name": "6b/w/LSE-direct-projection",
+          "pass": true,
+          "max_abs_error": 1.1102230246251565e-14,
+          "atol": 1e-09
+        },
+        {
+          "name": "6b/w/large+small=original",
+          "pass": false,
+          "max_abs_error": 7.340391227399127
+        },
+        {
+          "name": "6b/w/legacy-small-equals-u-original-minus-large",
+          "pass": true,
+          "max_abs_error": 8.881784197001252e-16,
+          "meaning": "Diagnostic confirmation of historical cross-component substitution, NOT scientific validation"
+        },
+        {
+          "name": "6b/v/LSE-direct-projection",
+          "pass": true,
+          "max_abs_error": 8.881784197001252e-15,
+          "atol": 1e-09
+        },
+        {
+          "name": "6b/v/large+small=original",
+          "pass": false,
+          "max_abs_error": 6.579969396580956
+        },
+        {
+          "name": "6b/v/legacy-small-equals-u-original-minus-large",
+          "pass": true,
+          "max_abs_error": 4.440892098500626e-16,
+          "meaning": "Diagnostic confirmation of historical cross-component substitution, NOT scientific validation"
+        }
+      ]
+    }
+  }
+}
